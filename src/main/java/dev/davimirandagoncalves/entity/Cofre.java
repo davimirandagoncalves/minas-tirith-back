@@ -1,11 +1,13 @@
 package dev.davimirandagoncalves.entity;
 
+import dev.davimirandagoncalves.entity.enums.MoedaEnum;
 import dev.davimirandagoncalves.entity.enums.StatusEnum;
 import io.quarkus.mongodb.panache.common.MongoEntity;
 import io.quarkus.mongodb.panache.reactive.ReactivePanacheMongoEntity;
 import io.smallrye.mutiny.Uni;
 import org.bson.types.ObjectId;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @MongoEntity(collection="cofres")
@@ -13,22 +15,22 @@ public class Cofre extends ReactivePanacheMongoEntity {
 
     private String nome;
 
-    private String moeda;
+    private MoedaEnum moeda;
 
     private StatusEnum status;
 
     private String objetivo;
 
-    private Integer total;
+    private String total;
 
-    private Integer progresso;
+    private String progresso;
 
     private List<Transacao> transacoes;
 
     public Cofre() {
     }
 
-    public Cofre(ObjectId id, String nome, String moeda, StatusEnum status, String objetivo) {
+    public Cofre(ObjectId id, String nome, MoedaEnum moeda, StatusEnum status, String objetivo) {
         this.id = id;
         this.nome = nome;
         this.moeda = moeda;
@@ -38,10 +40,33 @@ public class Cofre extends ReactivePanacheMongoEntity {
 
     public Uni<Cofre> salvar() {
         if (this.isUpdate()) {
-
+            return findById(id)
+                    .onItem().ifNotNull().transformToUni(cofreSalvo -> {
+                        this.transacoes = ((Cofre) cofreSalvo).getTransacoes();
+                        atualizaTotalEProgresso();
+                        return this.persistOrUpdate();
+                    });
         }
 
         return this.persist();
+    }
+
+    private void atualizaTotalEProgresso() {
+        if (this.transacoes == null || this.transacoes.isEmpty()) {
+            return;
+        }
+
+        var somaTransacoes = this.transacoes.stream()
+                .map(transacao -> new BigDecimal(transacao.getValor()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        this.total = somaTransacoes.toPlainString();
+
+        var porcentagem = new BigDecimal(this.objetivo).multiply(somaTransacoes).divide(BigDecimal.valueOf(100));
+
+        this.progresso = porcentagem.toPlainString();
+
+        System.out.println(total + "  " + progresso);
     }
 
     public String getNome() {
@@ -52,11 +77,11 @@ public class Cofre extends ReactivePanacheMongoEntity {
         this.nome = nome;
     }
 
-    public String getMoeda() {
+    public MoedaEnum getMoeda() {
         return moeda;
     }
 
-    public void setMoeda(String moeda) {
+    public void setMoeda(MoedaEnum moeda) {
         this.moeda = moeda;
     }
 
@@ -84,19 +109,19 @@ public class Cofre extends ReactivePanacheMongoEntity {
         this.transacoes = transacoes;
     }
 
-    public Integer getTotal() {
+    public String getTotal() {
         return total;
     }
 
-    public void setTotal(Integer total) {
+    public void setTotal(String total) {
         this.total = total;
     }
 
-    public Integer getProgresso() {
+    public String getProgresso() {
         return progresso;
     }
 
-    public void setProgresso(Integer progresso) {
+    public void setProgresso(String progresso) {
         this.progresso = progresso;
     }
 
