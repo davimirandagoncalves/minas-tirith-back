@@ -1,23 +1,36 @@
 package dev.davimirandagoncalves.entity;
 
 
+import dev.davimirandagoncalves.entity.enums.MoedaEnum;
+import org.bson.types.ObjectId;
+
 import java.time.LocalDate;
 
 public class Transacao {
 
+    private ObjectId id;
     private String valor;
     private String descricao;
-    private String moeda;
+    private MoedaEnum moeda;
     private LocalDate data;
 
     public Transacao() {
     }
 
-    public Transacao(String valor, String descricao, String moeda, LocalDate data) {
+    public Transacao(ObjectId id, String valor, String descricao, MoedaEnum moeda, LocalDate data) {
+        this.id = id;
         this.valor = valor;
         this.descricao = descricao;
         this.moeda = moeda;
         this.data = data;
+    }
+
+    public ObjectId getId() {
+        return id;
+    }
+
+    public void setId(ObjectId id) {
+        this.id = id;
     }
 
     public String getValor() {
@@ -36,11 +49,11 @@ public class Transacao {
         this.descricao = descricao;
     }
 
-    public String getMoeda() {
+    public MoedaEnum getMoeda() {
         return moeda;
     }
 
-    public void setMoeda(String moeda) {
+    public void setMoeda(MoedaEnum moeda) {
         this.moeda = moeda;
     }
 

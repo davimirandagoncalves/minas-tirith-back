@@ -5,6 +5,7 @@ import dev.davimirandagoncalves.entity.enums.StatusEnum;
 import io.quarkus.mongodb.panache.common.MongoEntity;
 import io.quarkus.mongodb.panache.reactive.ReactivePanacheMongoEntity;
 import io.smallrye.mutiny.Uni;
+import org.bson.codecs.pojo.annotations.BsonIgnore;
 import org.bson.types.ObjectId;
 
 import java.math.BigDecimal;
@@ -125,6 +126,7 @@ public class Cofre extends ReactivePanacheMongoEntity {
         this.progresso = progresso;
     }
 
+    @BsonIgnore
     public boolean isUpdate() {
         return this.id != null;
     }
