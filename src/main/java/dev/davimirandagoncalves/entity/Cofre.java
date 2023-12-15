@@ -2,13 +2,16 @@ package dev.davimirandagoncalves.entity;
 
 import dev.davimirandagoncalves.entity.enums.MoedaEnum;
 import dev.davimirandagoncalves.entity.enums.StatusEnum;
+import dev.davimirandagoncalves.resource.exchange.TransacaoRequest;
 import io.quarkus.mongodb.panache.common.MongoEntity;
 import io.quarkus.mongodb.panache.reactive.ReactivePanacheMongoEntity;
+import io.quarkus.mongodb.panache.reactive.ReactivePanacheMongoEntityBase;
 import io.smallrye.mutiny.Uni;
 import org.bson.codecs.pojo.annotations.BsonIgnore;
 import org.bson.types.ObjectId;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 @MongoEntity(collection="cofres")
@@ -66,8 +69,63 @@ public class Cofre extends ReactivePanacheMongoEntity {
         var porcentagem = new BigDecimal(this.objetivo).multiply(somaTransacoes).divide(BigDecimal.valueOf(100));
 
         this.progresso = porcentagem.toPlainString();
+    }
 
-        System.out.println(total + "  " + progresso);
+    public Uni<Cofre> salvaTransacao(TransacaoRequest transacaoRequest) {
+        Transacao transacao = transacaoRequest.toModel();
+
+        if (transacaoRequest.isUpdate()) {
+            return this.atualizaTransacao(transacao);
+        }
+
+        return this.adicionaTransacao(transacao);
+    }
+
+    private Uni<Cofre> adicionaTransacao(Transacao transacao) {
+        if (this.transacoes == null || this.transacoes.isEmpty()) {
+            this.transacoes = new ArrayList<>();
+        }
+        if (transacao.getId() == null) {
+            transacao.setId(new ObjectId());
+        }
+        this.transacoes.add(transacao);
+        return this.update();
+    }
+
+    private Uni<Cofre> atualizaTransacao(Transacao transacao) {
+        removeTransacaoById(transacao.getId(), this);
+        return this.adicionaTransacao(transacao);
+    }
+
+    public static Uni<Boolean> removeTransacaoById(ObjectId id) {
+        if (id == null) {
+            return Uni.createFrom().item(false);
+        }
+
+        return findCofreByTransacaoId(id)
+                .onItem().ifNotNull().transform(cofre -> {
+                    var cofreSalvo = (Cofre) cofre;
+
+                    if (null == cofreSalvo.getTransacoes() || cofreSalvo.getTransacoes().isEmpty()) {
+                        return Uni.createFrom().item(false);
+                    }
+
+                    if (!removeTransacaoById(id, cofreSalvo)) {
+                        return Uni.createFrom().item(false);
+                    }
+
+                    return cofreSalvo.update().onItem().ifNotNull().transform(cofreAtualizado -> true);
+                })
+                .onItem().transformToUni(cofre -> cofre == null ? Uni.createFrom().item(false) : cofre);
+    }
+
+    private static boolean removeTransacaoById(ObjectId id, Cofre cofreSalvo) {
+        return cofreSalvo.getTransacoes()
+                .removeIf(transacao -> transacao.compareId(id));
+    }
+
+    private static Uni<ReactivePanacheMongoEntityBase> findCofreByTransacaoId(ObjectId id) {
+        return find("transacoes._id", id).firstResult();
     }
 
     public String getNome() {

@@ -19,6 +19,7 @@ import java.net.URI;
 public class CofreResource {
 
     private static final Logger LOG = Logger.getLogger(CofreResource.class);
+    public static final String COFRE_COM_ID = "Cofre com id: ";
 
     @GET
     @Path("/{id}")
@@ -38,11 +39,11 @@ public class CofreResource {
 
         return Cofre.findById(new ObjectId(id))
                 .onItem().ifNotNull().transform(cofre -> {
-                    LOG.info("Cofre com id: " + id + " encontrado!");
+                    LOG.info(COFRE_COM_ID + id + " encontrado!");
                     return Response.ok(cofre).build();
                 })
                 .onItem().ifNull().continueWith(() -> {
-                    LOG.info("Cofre com id: " + id + " não foi encontrado!");
+                    LOG.info(COFRE_COM_ID + id + " não foi encontrado!");
                     return Response.status(Response.Status.NOT_FOUND).build();
                 });
     }
@@ -74,12 +75,11 @@ public class CofreResource {
     private static Uni<Response> saveCofre(CofreRequest cofreRequest) {
         final var isUpdate = cofreRequest.id() != null;
         return Uni.createFrom()
-                .item(cofreRequest)
-                .map(CofreRequest::toModel)
-                .flatMap(Cofre::salvar)
+                .item(cofreRequest.toModel())
+                .onItem().ifNotNull().transform(Cofre::salvar)
                 .onItem().ifNotNull().transform(cofre -> {
                     LOG.info("Cofre salvo com sucesso!");
-                    return isUpdate ? Response.ok() : Response.created(URI.create("/cofre/" + cofre.id));
+                    return isUpdate ? Response.ok() : Response.created(URI.create("/cofre/" + ((Cofre) cofre).id));
                 })
                 .onItem().transform(Response.ResponseBuilder::build)
                 .log("cofre");
@@ -100,9 +100,9 @@ public class CofreResource {
         return Cofre.deleteById(new ObjectId(id))
                 .onItem().transform(removed -> {
                     if (removed) {
-                        LOG.info("Cofre com id: " + id + " removido com sucesso!");
+                        LOG.info(COFRE_COM_ID + id + " removido com sucesso!");
                     } else {
-                        LOG.info("Cofre com id: " + id + " não encontrado!");
+                        LOG.info(COFRE_COM_ID + id + " não encontrado!");
                     }
 
                     return removed ? Response.Status.NO_CONTENT : Response.Status.NOT_FOUND;

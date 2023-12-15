@@ -13,8 +13,13 @@ public record TransacaoRequest(
         @NotBlank String valor,
         String descricao,
         @NotNull MoedaEnum moeda,
-        @NotNull LocalDate data
+        @NotNull LocalDate data,
+        @NotBlank String cofreId
 ) {
+
+    public boolean isUpdate() {
+        return this.id != null;
+    }
 
     public Transacao toModel() {
         ObjectId objectId = null;

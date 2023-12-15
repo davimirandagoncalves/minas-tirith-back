@@ -2,6 +2,7 @@ package dev.davimirandagoncalves.entity;
 
 
 import dev.davimirandagoncalves.entity.enums.MoedaEnum;
+import org.bson.codecs.pojo.annotations.BsonIgnore;
 import org.bson.types.ObjectId;
 
 import java.time.LocalDate;
@@ -23,6 +24,15 @@ public class Transacao {
         this.descricao = descricao;
         this.moeda = moeda;
         this.data = data;
+    }
+
+    @BsonIgnore
+    public boolean compareId(ObjectId id) {
+        if (this.id == null) {
+            return false;
+        }
+
+        return this.id.equals(id);
     }
 
     public ObjectId getId() {
@@ -68,9 +78,10 @@ public class Transacao {
     @Override
     public String toString() {
         return "Transacao{" +
-                "valor='" + valor + '\'' +
+                "id=" + id +
+                ", valor='" + valor + '\'' +
                 ", descricao='" + descricao + '\'' +
-                ", moeda='" + moeda + '\'' +
+                ", moeda=" + moeda +
                 ", data=" + data +
                 '}';
     }
